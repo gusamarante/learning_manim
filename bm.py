@@ -135,3 +135,37 @@ class Title(Scene):
         title = Text("Brownian Motion", font_size=100, color=BLUE)
         g = VGroup(tex, title).arrange(DOWN)
         self.play(Write(g))
+
+
+class Fractal(Scene):
+    # manim -p -ql bm.py Fractal
+    def construct(self):
+
+        n = 10
+        t = 10000
+
+        df = simulate_srw(t=t, n=1, k=1)
+
+        axes = Axes(
+            x_range=(df.index[0], df.index[-1], 10),
+            y_range=(df.min().min(), df.max().max(), 5),
+            axis_config={"include_ticks": False, "include_numbers": False},
+            tips=False,
+        )
+        labels = axes.get_axis_labels(
+            Tex(r"$t$").scale(1), Tex(r"$dW_t$").scale(1)
+        )
+
+        self.play(
+            Write(axes, run_time=2),
+            Write(labels, run_time=2),
+        )
+
+        coords = [axes.c2p(x, y) for x, y in zip(df.index, df[f'SRW {1}'].values)]
+        plot = VMobject(color=BLUE).set_points_as_corners(coords).set_stroke(width=0.5)
+
+        self.play(Write(plot, run_time=1))
+
+Fractal().construct()
+np.linspace(start=0, stop=1024, num=9) # Num = 2**n + 1
+# TODO This will generate the index position to be grabbed by the plotter
