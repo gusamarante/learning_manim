@@ -141,14 +141,14 @@ class Fractal(Scene):
     # manim -p -ql bm.py Fractal
     def construct(self):
 
-        n = 10
-        t = 10000
-
+        n = 15  # number of morphs into fractal
+        t = 2 ** n  # Number of observations
         df = simulate_srw(t=t, n=1, k=1)
+        df = df['SRW 1']
 
         axes = Axes(
             x_range=(df.index[0], df.index[-1], 10),
-            y_range=(df.min().min(), df.max().max(), 5),
+            y_range=(df.min(), df.max(), 5),
             axis_config={"include_ticks": False, "include_numbers": False},
             tips=False,
         )
@@ -157,15 +157,22 @@ class Fractal(Scene):
         )
 
         self.play(
-            Write(axes, run_time=2),
-            Write(labels, run_time=2),
+            Write(axes, run_time=1),
+            Write(labels, run_time=1),
         )
 
-        coords = [axes.c2p(x, y) for x, y in zip(df.index, df[f'SRW {1}'].values)]
-        plot = VMobject(color=BLUE).set_points_as_corners(coords).set_stroke(width=0.5)
-
+        # Draw the first line
+        index2plot = np.linspace(start=0, stop=t, num=2)
+        series2plot = df.loc[index2plot].copy()
+        coords = [axes.c2p(x, y) for x, y in zip(series2plot.index, series2plot.values)]
+        plot = VMobject(color=BLUE).set_points_as_corners(coords).set_stroke(width=1)
         self.play(Write(plot, run_time=1))
+        self.wait(0.2)
 
-Fractal().construct()
-np.linspace(start=0, stop=1024, num=9) # Num = 2**n + 1
-# TODO This will generate the index position to be grabbed by the plotter
+        for n in range(1, n + 1):
+            index2plot = np.linspace(start=0, stop=t, num=2**n + 1)
+            series2plot = df.loc[index2plot]
+            coords = [axes.c2p(x, y) for x, y in zip(series2plot.index, series2plot.values)]
+            new_plot = VMobject(color=BLUE).set_points_as_corners(coords).set_stroke(width=1)
+            self.play(Transform(plot, new_plot, run_time=1))
+            self.wait(0.2)
