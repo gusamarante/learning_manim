@@ -11,7 +11,7 @@ class MyIntro(Scene):
             fill_opacity=1)
 
         tex = MathTex(
-            r"J\upsilon\varsigma\tau G\mu\varsigma",
+            r"J\upsilon\varsigma\tau \ G\mu\varsigma",
             font_size=200,
             color=ManimColor.from_hex('#3333B2'),
         )
@@ -21,5 +21,5 @@ class MyIntro(Scene):
         self.add(background)
         self.play(Write(tex, run_time=2))
         self.wait()
-        self.play(FadeOut(g, run_time=2))
+        self.play(FadeOut(g, run_time=1.5))
         self.wait()
