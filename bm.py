@@ -229,10 +229,22 @@ class CoinTosses(Scene):
 
     def construct(self):
 
-        # TODO Construct the axis
+        # TODO I have all I need here.
+        #  Now write it smarter, actually selecting a random coin
+
+        plane = NumberPlane(
+            x_range = (0, 5),
+            y_range = (-3, 3),
+            x_length = 7,
+            y_length=4,
+            axis_config={"include_numbers": True},
+        )
+        plane.shift(DOWN)
+        self.play(Create(plane))
 
         coins = CoinLine("HTHT")
         val = 1
+        w = 0
         for n, c in enumerate(coins):
             self.play(Create(c))
             self.play(c.animate.shift(UP * 3 + LEFT * (5 - 0.05 * n)))
@@ -242,15 +254,31 @@ class CoinTosses(Scene):
                     MathTex(fr"+{val}", color=BLUE)
                     .move_to(UP * 2 + LEFT * (6.5 - n))
                 ))
+                line_graph = plane.plot_line_graph(
+                    x_values=[n, n+1],
+                    y_values=[w, w+val],
+                    line_color=GOLD_E,
+                    vertex_dot_style=dict(stroke_width=3, fill_color=PURPLE),
+                    stroke_width=4,
+                )
+                self.play(Create(line_graph))
+                w = w + val
                 val = -1
             else:
                 self.play(Write(
                     MathTex(fr"{val}", color=RED)
                     .move_to(UP * 2 + LEFT * (6.5 - n))
                 ))
+                line_graph = plane.plot_line_graph(
+                    x_values=[n, n+1],
+                    y_values=[w, w + val],
+                    line_color=GOLD_E,
+                    vertex_dot_style=dict(stroke_width=3, fill_color=PURPLE),
+                    stroke_width=4,
+                )
+                self.play(Create(line_graph))
+                w = w + val
                 val = 1
-
-            # TODO Add increment to line
 
 
 
