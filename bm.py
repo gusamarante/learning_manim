@@ -2,6 +2,10 @@ from manim import *
 import pandas as pd
 
 
+MY_RED = "#ff7575"
+MY_BLUE = "#759cff"
+
+# ===== Functions =====
 def simulate_srw(t, n, k=1, random_seed=None):
     """
     Simulates the scaled symmetric random walk that leads to the brownian motion
@@ -31,6 +35,89 @@ def simulate_srw(t, n, k=1, random_seed=None):
     return simulated_trajectories
 
 
+def split(self):
+    self.wait(5)
+    self.next_section()
+
+Scene.split = split
+
+
+# ===== Custom Classes =====
+class Coin(VMobject):
+
+    def __init__(self, face, radius=0.4, **kwargs):
+        super().__init__(**kwargs)
+
+        if face == 'H':
+            self.add(
+                Circle(color=WHITE, fill_color=BLUE_E,
+                       fill_opacity=1, radius=radius, stroke_width=5*radius),
+                Tex("H", font_size=135*radius)
+            )
+        else:
+            self.add(
+                Circle(color=WHITE, fill_color=RED_E,
+                       fill_opacity=1, radius=radius, stroke_width=5*radius),
+                Tex("T", font_size=135*radius)
+            )
+
+    @override_animation(Create)
+    def _create_override(self):
+        return AnimationGroup(
+            FadeIn(self, scale=1.2, shift=DOWN * 0.2),
+            self.animate.flip(),
+        )
+
+
+class CoinLine(VMobject):
+    def __init__(self, sequence, **kwargs):
+        super().__init__(**kwargs)
+        self.add(*[Coin(t) for t in sequence]
+                 ).arrange_in_grid(buff=0.15, cols=10)
+
+    @override_animation(Create)
+    def _Create_override(self, lag_ratio=0.5, run_time=1):
+        return AnimationGroup(
+            *[Create(c) for c in self],
+            lag_ratio=lag_ratio,
+            run_time=run_time
+        )
+
+
+class CoinSim(VGroup):
+    def __init__(self, sequence, **kwargs):
+        super().__init__(**kwargs)
+        wealth = 100
+        line = [MathTex(r"\$" + str(wealth))]
+        for l in sequence:
+            line.append(Coin(l).next_to(line[-1], LEFT))
+            factor = 0.5
+            if l == 'H':
+                factor = 1.8
+            line.append(MathTex(r"\times" + str(factor)).next_to(line[-2]))
+            wealth *= factor
+
+            line.append(
+                Tex(r"\$" + "{:.0f}".format(wealth)).next_to(line[-2]).shift(RIGHT))
+        self.line = VGroup(*line)
+        self.add(self.line)
+
+    def animate(self, scene):
+        scene.play(Write(self.line[0]))
+        scene.split()
+        i = 0
+        for i in range(0, len(self.line)-1, 3):
+            scene.play(Create(self.line[i+1]), FadeIn(self.line[i+2]))
+            scene.split()
+            scene.play(ReplacementTransform(
+                VGroup(self.line[i], self.line[i+2]), self.line[i+3]))
+
+        scene.split()
+        scene.play(*[FadeOut(self.line[i])
+                   for i in range(1, len(self.line), 3)], FadeOut(self.line[-1]))
+
+
+# ===== Scenes =====
 class Intro(Scene):
     # manim -p -ql bm.py Intro
     def construct(self):
@@ -137,6 +224,87 @@ class Title(Scene):
         self.play(Write(g))
 
 
+class CoinTosses(Scene):
+    # manim -p -ql bm.py CoinTosses
+
+    def construct(self):
+
+        # TODO Construct the axis
+
+        coins = CoinLine("HTHT")
+        val = 1
+        for n, c in enumerate(coins):
+            self.play(Create(c))
+            self.play(c.animate.shift(UP * 3 + LEFT * (5 - 0.05 * n)))
+
+            if val == 1:
+                self.play(Write(
+                    MathTex(fr"+{val}", color=BLUE)
+                    .move_to(UP * 2 + LEFT * (6.5 - n))
+                ))
+                val = -1
+            else:
+                self.play(Write(
+                    MathTex(fr"{val}", color=RED)
+                    .move_to(UP * 2 + LEFT * (6.5 - n))
+                ))
+                val = 1
+
+            # TODO Add increment to line
+
+
+
+        # self.play(Write(
+        #     MathTex(r"\uparrow +80\%", color=MY_BLUE)
+        #     .move_to(UP * 2 + LEFT, RIGHT)
+        # ))
+        # self.split()
+        #
+        # self.play(Create(Coin("T").move_to(UP * 3.2 + RIGHT * 1.5)))
+        #
+        # self.play(Write(
+        #     MathTex(r"\downarrow -50\%", color=MY_RED)
+        #     .move_to(UP * 2 + RIGHT, LEFT)
+        # ))
+        #
+        # self.split()
+        #
+        # # Play examples
+        # coins = CoinSim("HHTT").shift(DOWN + LEFT)
+        # coins.animate(self)
+        # self.split()
+        #
+        # # Write Probability Equation
+        # eq = MathTex(
+        #     r"\frac{1}{2} \times 0.8",
+        #     r"+", r"\frac{1}{2} \times -0.5",
+        #     r"="
+        # ).shift(RIGHT * 0.45 + UP * 0.6)
+        #
+        # eq[0].set_color(MY_BLUE)
+        # eq[2].set_color(MY_RED)
+        #
+        # for part in eq:
+        #     self.play(Write(part))
+        #     self.wait(1.5)
+        #
+        # eq2 = Tex(
+        #     r"= 0.15 ",
+        #     r"= 15\% ",
+        #     r"average gain per coin toss"
+        # ).shift(DOWN)
+        #
+        # self.play(Transform(eq.copy(), eq2[0]))
+        # self.split()
+        # self.play(Transform(eq2[0].copy(), eq2[1]))
+        # self.split()
+        # self.play(FadeIn(eq2[2]))
+        #
+        # self.split()
+        # self.play(SpinInFromNothing(
+        #     Tex("Sounds great!", color=YELLOW).scale(2).shift(3 * DOWN)))
+        # self.split()
+
 class Fractal(Scene):
     # manim -p -ql bm.py Fractal
     def construct(self):
@@ -176,3 +344,6 @@ class Fractal(Scene):
             new_plot = VMobject(color=BLUE).set_points_as_corners(coords).set_stroke(width=1)
             self.play(Transform(plot, new_plot, run_time=1))
             self.wait(0.2)
+
+
+CoinTosses().construct()
