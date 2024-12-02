@@ -64,7 +64,7 @@ class Coin(VMobject):
     @override_animation(Create)
     def _create_override(self):
         return AnimationGroup(
-            FadeIn(self, scale=1.2, shift=DOWN * 0.2),
+            FadeIn(self, scale=1.2, shift=DOWN * 0.2, run_time=0.5),
             self.animate.flip(),
         )
 
@@ -229,109 +229,58 @@ class CoinTosses(Scene):
 
     def construct(self):
 
-        # TODO I have all I need here.
-        #  Now write it smarter, actually selecting a random coin
+        n_throws = 8
+        w = 0
 
         plane = NumberPlane(
-            x_range = (0, 5),
-            y_range = (-3, 3),
-            x_length = 7,
-            y_length=4,
+            x_range=(0, n_throws),
+            y_range=(-n_throws, n_throws),
+            x_length=11,
+            y_length=5,
             axis_config={"include_numbers": True},
         )
         plane.shift(DOWN)
-        self.play(Create(plane))
+        self.play(Create(plane, run_time=0.5))
 
-        coins = CoinLine("HTHT")
-        val = 1
-        w = 0
-        for n, c in enumerate(coins):
-            self.play(Create(c))
-            self.play(c.animate.shift(UP * 3 + LEFT * (5 - 0.05 * n)))
+        np.random.seed(666)
+        for n in range(n_throws):
 
-            if val == 1:
-                self.play(Write(
-                    MathTex(fr"+{val}", color=BLUE)
-                    .move_to(UP * 2 + LEFT * (6.5 - n))
-                ))
-                line_graph = plane.plot_line_graph(
-                    x_values=[n, n+1],
-                    y_values=[w, w+val],
-                    line_color=GOLD_E,
-                    vertex_dot_style=dict(stroke_width=3, fill_color=PURPLE),
-                    stroke_width=4,
-                )
-                self.play(Create(line_graph))
-                w = w + val
-                val = -1
-            else:
-                self.play(Write(
-                    MathTex(fr"{val}", color=RED)
-                    .move_to(UP * 2 + LEFT * (6.5 - n))
-                ))
-                line_graph = plane.plot_line_graph(
-                    x_values=[n, n+1],
-                    y_values=[w, w + val],
-                    line_color=GOLD_E,
-                    vertex_dot_style=dict(stroke_width=3, fill_color=PURPLE),
-                    stroke_width=4,
-                )
-                self.play(Create(line_graph))
-                w = w + val
-                val = 1
+            # Coin Toss
+            randu = np.random.rand()
+            if randu <= 0.5:  # Heads
+                increment = 1
+                face = "H"
+                textvalue = r"+1"
+                textcolor = BLUE
 
+            else:  # Tails
+                increment = -1
+                face = "T"
+                textvalue = r"-1"
+                textcolor = RED
 
+            c = Coin(face=face)
+            self.play(Create(c), run_time=0.5)  # Coin appears
+            self.play(c.animate.shift(UP * 3 + LEFT * (6.5 - 0.8 * n)), run_time=0.5)  # Move the coin to coin line
+            self.play(Write(  # Add the value of the increment
+                MathTex(textvalue, color=textcolor)
+                .move_to(UP * 2 + LEFT * (6.5 - 0.8 * n)),
+                run_time=0.5,
+            ))
 
-        # self.play(Write(
-        #     MathTex(r"\uparrow +80\%", color=MY_BLUE)
-        #     .move_to(UP * 2 + LEFT, RIGHT)
-        # ))
-        # self.split()
-        #
-        # self.play(Create(Coin("T").move_to(UP * 3.2 + RIGHT * 1.5)))
-        #
-        # self.play(Write(
-        #     MathTex(r"\downarrow -50\%", color=MY_RED)
-        #     .move_to(UP * 2 + RIGHT, LEFT)
-        # ))
-        #
-        # self.split()
-        #
-        # # Play examples
-        # coins = CoinSim("HHTT").shift(DOWN + LEFT)
-        # coins.animate(self)
-        # self.split()
-        #
-        # # Write Probability Equation
-        # eq = MathTex(
-        #     r"\frac{1}{2} \times 0.8",
-        #     r"+", r"\frac{1}{2} \times -0.5",
-        #     r"="
-        # ).shift(RIGHT * 0.45 + UP * 0.6)
-        #
-        # eq[0].set_color(MY_BLUE)
-        # eq[2].set_color(MY_RED)
-        #
-        # for part in eq:
-        #     self.play(Write(part))
-        #     self.wait(1.5)
-        #
-        # eq2 = Tex(
-        #     r"= 0.15 ",
-        #     r"= 15\% ",
-        #     r"average gain per coin toss"
-        # ).shift(DOWN)
-        #
-        # self.play(Transform(eq.copy(), eq2[0]))
-        # self.split()
-        # self.play(Transform(eq2[0].copy(), eq2[1]))
-        # self.split()
-        # self.play(FadeIn(eq2[2]))
-        #
-        # self.split()
-        # self.play(SpinInFromNothing(
-        #     Tex("Sounds great!", color=YELLOW).scale(2).shift(3 * DOWN)))
-        # self.split()
+            # Increment the line chart
+            line_graph = plane.plot_line_graph(
+                x_values=[n, n + 1],
+                y_values=[w, w + increment],
+                line_color=GOLD_E,
+                vertex_dot_style=dict(stroke_width=3, fill_color=GOLD_E),
+                stroke_width=4,
+            )
+            self.play(Create(line_graph, run_time=0.5))
+
+            # Set up next iteration
+            w = w + increment
+
 
 class Fractal(Scene):
     # manim -p -ql bm.py Fractal
